@@ -1,0 +1,876 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Surprise from Fani!</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@400;600;700&display=swap");
+
+      :root {
+        --bg-grad: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+        --card-shadow:
+          15px 15px 35px rgba(0, 0, 0, 0.05), -15px -15px 35px #ffffff;
+      }
+
+      body {
+        font-family: "Poppins", sans-serif;
+        margin: 0;
+        padding: 5vh 5vw;
+        min-height: 100vh;
+        background: var(--bg-grad);
+        color: #4a4a4a;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        overflow-x: hidden;
+        perspective: 1000px;
+      }
+
+      h1 {
+        font-family: "Pacifico", cursive;
+        color: #ff6b81;
+        font-size: clamp(2.2rem, 6vw, 4rem);
+        margin: 10px 0;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      p.subtitle {
+        color: #8395a7;
+        font-weight: 500;
+        margin-bottom: 40px;
+        font-size: clamp(0.9rem, 3vw, 1.1rem);
+      }
+
+      /* --- TATA LETAK FLEXBOX BARU (BIAR RAPI KE TENGAH) --- */
+      .grid-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center; /* Kartu sisa otomatis ke tengah */
+        gap: 25px;
+        width: 100%;
+        max-width: 900px;
+      }
+
+      .card-wrapper {
+        perspective: 1000px;
+        transform-style: preserve-3d;
+        flex: 1 1 140px; /* Fleksibel membesar */
+        max-width: 220px; /* Batas maksimal di laptop */
+      }
+
+      /* --- DESAIN KARTU 3D --- */
+      .envelope-card {
+        background: #ffffff;
+        padding: 35px 15px;
+        border-radius: 25px;
+        cursor: pointer;
+        box-shadow: var(--card-shadow);
+        border: 2px solid rgba(255, 255, 255, 0.8);
+        position: relative;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        transform-style: preserve-3d;
+        height: 100%;
+        box-sizing: border-box;
+      }
+
+      .envelope-card::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 12px;
+        background: var(--card-color, #ff6b81);
+        border-radius: 25px 25px 0 0;
+        transform: translateZ(10px);
+      }
+
+      .envelope-icon {
+        font-size: 3rem;
+        display: block;
+        margin-bottom: 15px;
+        transform: translateZ(40px);
+        filter: drop-shadow(0 5px 5px rgba(0, 0, 0, 0.1));
+      }
+      .envelope-card h3 {
+        color: #2d3436;
+        font-size: clamp(1rem, 2.5vw, 1.3rem);
+        font-weight: 700;
+        margin: 0;
+        transform: translateZ(30px);
+      }
+
+      @media (hover: hover) and (pointer: fine) {
+        .envelope-card:hover {
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+        }
+      }
+      @media (hover: none) {
+        .envelope-card:active {
+          transform: scale(0.95);
+        }
+      }
+
+      /* --- MODAL --- */
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.5);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        perspective: 1500px;
+      }
+      .modal.show {
+        opacity: 1;
+      }
+
+      .modal-content {
+        --theme-color: #ff6b81;
+        --theme-bg: #fff0f3;
+        background: #ffffff;
+        padding: 30px 20px;
+        border-radius: 30px;
+        max-width: 420px;
+        width: 85%;
+        position: relative;
+        text-align: center;
+        box-shadow:
+          0 20px 50px rgba(0, 0, 0, 0.1),
+          inset 0 0 0 3px var(--theme-color);
+        transform: translateY(50px) scale(0.9);
+        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+      .modal.show .modal-content {
+        transform: translateY(0) scale(1);
+      }
+
+      .close-btn {
+        position: absolute;
+        top: 12px;
+        right: 20px;
+        font-size: 28px;
+        cursor: pointer;
+        color: #b2bec3;
+        transition: color 0.3s;
+      }
+      .close-btn:hover {
+        color: var(--theme-color);
+      }
+      #modalName {
+        color: var(--theme-color);
+        font-size: 1.6rem;
+        margin-top: 5px;
+      }
+
+      /* --- INPUT & TOMBOL --- */
+      input[type="password"] {
+        width: 85%;
+        padding: 12px;
+        margin: 15px 0;
+        border: 2px solid #eee;
+        border-radius: 15px;
+        font-family: "Poppins", sans-serif;
+        font-size: 1rem;
+        text-align: center;
+        background: #f8f9fa;
+        color: #2d3436;
+        font-weight: 600;
+        outline: none;
+        transition: all 0.3s;
+      }
+      input[type="password"]:focus {
+        border-color: var(--theme-color);
+        background: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+      }
+
+      .btn-3d {
+        background: var(--theme-color);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 20px;
+        font-family: "Poppins", sans-serif;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        position: relative;
+        margin-top: 10px;
+        width: 80%;
+        box-shadow: 0 6px 0 rgba(0, 0, 0, 0.15);
+        transition: all 0.1s ease;
+      }
+      .btn-3d:active {
+        box-shadow: 0 0px 0 rgba(0, 0, 0, 0.15);
+        transform: translateY(6px);
+      }
+
+      /* --- GAME SECTION --- */
+      #gameSection,
+      #passwordSection {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+      }
+      .game-instruction {
+        font-size: 1rem;
+        color: var(--theme-color);
+        font-weight: 700;
+        margin-bottom: 10px;
+      }
+
+      .game-box {
+        width: 100%;
+        height: 220px;
+        background: var(--theme-bg);
+        border-radius: 20px;
+        position: relative;
+        overflow: hidden;
+        border: 2px dashed rgba(0, 0, 0, 0.05);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .game-obj {
+        position: absolute;
+        font-size: 3.5rem;
+        cursor: pointer;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        transition: transform 0.1s;
+      }
+      .game-obj:active {
+        transform: scale(0.8);
+      }
+
+      @keyframes flutter {
+        0% {
+          transform: translate(0, 0) rotate(-10deg);
+        }
+        25% {
+          transform: translate(30px, -40px) rotate(10deg);
+        }
+        50% {
+          transform: translate(60px, 0) rotate(-10deg);
+        }
+        75% {
+          transform: translate(30px, 40px) rotate(10deg);
+        }
+        100% {
+          transform: translate(0, 0) rotate(-10deg);
+        }
+      }
+
+      .cloud-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        width: 80%;
+        height: 80%;
+      }
+      .cloud-hole {
+        background: #ffffff;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+        box-shadow: inset 0 5px 10px rgba(0, 0, 0, 0.05);
+      }
+      .bird-mole {
+        position: absolute;
+        font-size: 2.5rem;
+        bottom: -50px;
+        transition: bottom 0.2s;
+        cursor: pointer;
+        user-select: none;
+      }
+      .bird-mole.up {
+        bottom: 10px;
+      }
+
+      #cameraFlash {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: white;
+        opacity: 0;
+        pointer-events: none;
+        border-radius: 20px;
+      }
+      @keyframes flashAnim {
+        0% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
+
+      .memory-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+      }
+      .memory-card {
+        width: 60px;
+        height: 60px;
+        background: #dfe6e9;
+        border-radius: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 2rem;
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .memory-card.flipped {
+        background: #fff;
+      }
+
+      .track {
+        width: 90%;
+        height: 40px;
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 20px;
+        position: relative;
+        overflow: hidden;
+      }
+      .target-zone {
+        position: absolute;
+        left: 40%;
+        width: 20%;
+        height: 100%;
+        background: rgba(46, 213, 115, 0.4);
+      }
+      .runner {
+        position: absolute;
+        font-size: 2rem;
+        top: 0;
+        left: 0;
+        line-height: 40px;
+      }
+
+      .message-img {
+        max-width: 100%;
+        max-height: 70vh;
+        object-fit: contain;
+        border-radius: 15px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        display: none;
+        animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      }
+      @keyframes popIn {
+        0% {
+          opacity: 0;
+          transform: scale(0.8);
+        }
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      /* HP Layout adjustments (FLEXBOX RAPI 2 KOLOM) */
+      @media screen and (max-width: 480px) {
+        .grid-container {
+          gap: 15px;
+        }
+        .card-wrapper {
+          flex: 0 0 calc(50% - 10px);
+          max-width: calc(50% - 10px);
+        }
+
+        .envelope-card {
+          padding: 25px 10px;
+        }
+        .envelope-icon {
+          font-size: 2.5rem;
+        }
+        .game-box {
+          height: 180px;
+        }
+        .game-obj {
+          font-size: 2.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Surprise from Fani! 💌</h1>
+    <p class="subtitle">Buka gemboknya dan taklukkan tantangannya!</p>
+
+    <div class="grid-container" id="cardContainer"></div>
+
+    <div class="modal" id="myModal">
+      <div class="modal-content" id="modalContentBox">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <h2 id="modalName">Nama</h2>
+
+        <div id="passwordSection">
+          <p style="margin: 0 0 10px 0; font-size: 0.95rem">
+            Masukkan password rahasia:
+          </p>
+          <input
+            type="password"
+            id="passwordInput"
+            placeholder="Ketik password..."
+          />
+          <button class="btn-3d" onclick="checkPassword()">
+            Buka Gembok 🔓
+          </button>
+          <p
+            id="errorMessage"
+            style="
+              color: #ff4757;
+              display: none;
+              margin-top: 10px;
+              font-weight: 600;
+              font-size: 0.85rem;
+            "
+          >
+            ❌ Password salah!
+          </p>
+        </div>
+
+        <div id="gameSection">
+          <p class="game-instruction" id="gameInstruction">Instruksi</p>
+          <div class="game-box" id="gameBox"></div>
+        </div>
+
+        <div id="messageSection">
+          <img id="surpriseImg" class="message-img" src="" alt="Surat" />
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const friendsData = {
+        misya: {
+          name: "Misya",
+          password: "123",
+          image: "1.jpg",
+          color: "#ff9a9e",
+          bg: "#fff0f3",
+        },
+        sekar: {
+          name: "Sekar",
+          password: "123",
+          image: "2.jpg",
+          color: "#74b9ff",
+          bg: "#f1f8ff",
+        },
+        tata: {
+          name: "Tata",
+          password: "123",
+          image: "3.jpg",
+          color: "#fdcb6e",
+          bg: "#fffdf0",
+        },
+        najwa: {
+          name: "Najwa",
+          password: "123",
+          image: "4.jpg",
+          color: "#00b894",
+          bg: "#f0fdf8",
+        },
+        tyas: {
+          name: "Tyas",
+          password: "123",
+          image: "5.jpg",
+          color: "#2d3436",
+          bg: "#f5f6fa",
+        },
+        intan: {
+          name: "Intan",
+          password: "123",
+          image: "6.jpg",
+          color: "#e84393",
+          bg: "#fff0f5",
+        },
+        nia: {
+          name: "Nia",
+          password: "123",
+          image: "7.jpg",
+          color: "#a29bfe",
+          bg: "#f8f0ff",
+        },
+      };
+
+      let currentFriend = "";
+      let gameInterval, gameTimer;
+
+      // RENDER KARTU
+      const container = document.getElementById("cardContainer");
+      for (const key in friendsData) {
+        const friend = friendsData[key];
+        const wrapper = document.createElement("div");
+        wrapper.className = "card-wrapper";
+        const card = document.createElement("div");
+        card.className = "envelope-card";
+        card.innerHTML = `<span class="envelope-icon">💌</span><h3>${friend.name}</h3>`;
+        card.style.setProperty("--card-color", friend.color);
+
+        if (window.matchMedia("(pointer: fine)").matches) {
+          card.addEventListener("mousemove", (e) => {
+            let rect = card.getBoundingClientRect();
+            let x = e.clientX - rect.left;
+            let y = e.clientY - rect.top;
+            let rotateX = (y / rect.height - 0.5) * -20;
+            let rotateY = (x / rect.width - 0.5) * 20;
+            card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
+          });
+          card.addEventListener("mouseleave", () => {
+            card.style.transform = `rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+          });
+        }
+
+        card.onclick = () => openModal(key);
+        wrapper.appendChild(card);
+        container.appendChild(wrapper);
+      }
+
+      const modal = document.getElementById("myModal");
+      const passInput = document.getElementById("passwordInput");
+
+      // FUNGSI OPEN MODAL YANG SUDAH DIPERBAIKI
+      function openModal(key) {
+        currentFriend = key;
+        const friend = friendsData[key];
+        const box = document.getElementById("modalContentBox");
+        box.style.setProperty("--theme-color", friend.color);
+        box.style.setProperty("--theme-bg", friend.bg);
+
+        // Munculkan kembali modalnya
+        modal.style.display = "flex";
+        setTimeout(() => {
+          modal.classList.add("show");
+        }, 10);
+
+        document.getElementById("modalName").innerText = "Untuk " + friend.name;
+        document.getElementById("passwordSection").style.display = "flex";
+        document.getElementById("gameSection").style.display = "none";
+        document.getElementById("surpriseImg").style.display = "none";
+        passInput.value = "";
+        document.getElementById("errorMessage").style.display = "none";
+      }
+
+      // FUNGSI CLOSE MODAL YANG SUDAH DIPERBAIKI
+      function closeModal() {
+        modal.classList.remove("show");
+        clearInterval(gameInterval);
+        clearTimeout(gameTimer);
+        // Sembunyikan tuntas setelah animasi selesai
+        setTimeout(() => {
+          modal.style.display = "none";
+        }, 300);
+      }
+
+      passInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") checkPassword();
+      });
+
+      function checkPassword() {
+        if (passInput.value === friendsData[currentFriend].password) {
+          document.getElementById("passwordSection").style.display = "none";
+          document.getElementById("gameSection").style.display = "flex";
+          startAwesomeGame(currentFriend);
+        } else {
+          document.getElementById("errorMessage").style.display = "block";
+        }
+      }
+
+      function startAwesomeGame(key) {
+        const box = document.getElementById("gameBox");
+        const instruct = document.getElementById("gameInstruction");
+        box.innerHTML = "";
+        box.style.cssText = "";
+        clearInterval(gameInterval);
+        clearTimeout(gameTimer);
+        let score = 0;
+
+        if (key === "misya") {
+          instruct.innerText = "Tangkap 3 kupu-kupu! (0/3)";
+          for (let i = 0; i < 3; i++) {
+            let obj = document.createElement("div");
+            obj.className = "game-obj";
+            obj.innerText = "🦋";
+            obj.style.animation = `flutter ${3 + i}s infinite linear`;
+            obj.style.left = `${10 + i * 25}%`;
+            box.appendChild(obj);
+
+            obj.onclick = () => {
+              obj.style.display = "none";
+              score++;
+              instruct.innerText = `Tangkap 3 kupu-kupu! (${score}/3)`;
+              if (score === 3) gameWin();
+            };
+          }
+        } else if (key === "sekar") {
+          instruct.innerText = "Ketuk 3 burung yang ngintip! (0/3)";
+          box.style.padding = "10px";
+          let grid = document.createElement("div");
+          grid.className = "cloud-grid";
+          let moles = [];
+          for (let i = 0; i < 4; i++) {
+            let hole = document.createElement("div");
+            hole.className = "cloud-hole";
+            let mole = document.createElement("div");
+            mole.className = "bird-mole";
+            mole.innerText = "🐦";
+            hole.appendChild(mole);
+            grid.appendChild(hole);
+            moles.push(mole);
+
+            mole.onmousedown = mole.ontouchstart = (e) => {
+              e.preventDefault();
+              if (mole.classList.contains("up")) {
+                mole.classList.remove("up");
+                mole.innerText = "✨";
+                score++;
+                instruct.innerText = `Ketuk 3 burung yang ngintip! (${score}/3)`;
+                setTimeout(() => (mole.innerText = "🐦"), 300);
+                if (score === 3) {
+                  clearInterval(gameInterval);
+                  setTimeout(gameWin, 300);
+                }
+              }
+            };
+          }
+          box.appendChild(grid);
+          gameInterval = setInterval(() => {
+            let active = moles[Math.floor(Math.random() * 4)];
+            if (!active.classList.contains("up")) {
+              active.classList.add("up");
+              setTimeout(() => active.classList.remove("up"), 700);
+            }
+          }, 800);
+        } else if (key === "tata") {
+          instruct.innerText = "Tahan tombol buat nyiram tanaman!";
+          box.style.flexDirection = "column";
+          let plant = document.createElement("div");
+          plant.style.fontSize = "4.5rem";
+          plant.innerText = "🌱";
+          let btn = document.createElement("button");
+          btn.className = "btn-3d";
+          btn.innerText = "Tahan 🚿";
+          btn.style.padding = "8px 20px";
+
+          let pCont = document.createElement("div");
+          pCont.style.cssText =
+            "width:70%; height:15px; background:#e0e5ec; border-radius:10px; margin: 15px 0; overflow:hidden;";
+          let pBar = document.createElement("div");
+          pBar.style.cssText =
+            "height:100%; width:0%; background:#fdcb6e; transition:width 0.1s;";
+          pCont.appendChild(pBar);
+          box.append(plant, pCont, btn);
+
+          let progress = 0;
+          let isHolding = false;
+
+          const update = () => {
+            if (isHolding) progress += 2;
+            else progress -= 1.5;
+            progress = Math.max(0, Math.min(100, progress));
+            pBar.style.width = progress + "%";
+
+            if (progress > 30) plant.innerText = "🌿";
+            else plant.innerText = "🌱";
+            if (progress > 60) plant.innerText = "🌷";
+            if (progress >= 100) {
+              plant.innerText = "🌼";
+              instruct.innerText = "Mekar!";
+              isHolding = false;
+              setTimeout(gameWin, 400);
+              return;
+            }
+
+            if (progress < 100) requestAnimationFrame(update);
+          };
+
+          const start = (e) => {
+            e.preventDefault();
+            if (progress >= 100) return;
+            isHolding = true;
+            btn.style.transform = "translateY(4px)";
+            requestAnimationFrame(update);
+          };
+          const stop = (e) => {
+            e.preventDefault();
+            isHolding = false;
+            btn.style.transform = "translateY(0)";
+          };
+
+          btn.addEventListener("mousedown", start);
+          btn.addEventListener("touchstart", start);
+          window.addEventListener("mouseup", stop);
+          window.addEventListener("touchend", stop);
+        } else if (key === "najwa") {
+          instruct.innerText = "Geser tepat ke tengah biar fokus!";
+          box.style.flexDirection = "column";
+          let cam = document.createElement("div");
+          cam.style.fontSize = "5rem";
+          cam.innerText = "📸";
+          cam.style.filter = "blur(10px)";
+          let flash = document.createElement("div");
+          flash.id = "cameraFlash";
+          let slider = document.createElement("input");
+          slider.type = "range";
+          slider.style.width = "80%";
+          slider.style.marginTop = "20px";
+
+          box.append(cam, slider, flash);
+
+          slider.oninput = () => {
+            let diff = Math.abs(50 - slider.value);
+            cam.style.filter = `blur(${diff / 4}px)`;
+            if (diff === 0) {
+              slider.disabled = true;
+              cam.innerText = "✨📸✨";
+              flash.style.animation = "flashAnim 0.8s ease-out";
+              setTimeout(gameWin, 800);
+            }
+          };
+        } else if (key === "tyas") {
+          instruct.innerText = "Cari sepasang Hati Hitam! 🖤🖤";
+          let grid = document.createElement("div");
+          grid.className = "memory-grid";
+          let cards = ["🖤", "🖤", "💔", "💔"].sort(() => Math.random() - 0.5);
+          let flipped = [];
+          let solved = 0;
+
+          cards.forEach((val, i) => {
+            let card = document.createElement("div");
+            card.className = "memory-card";
+            card.innerText = "❓";
+            card.onclick = () => {
+              if (flipped.length < 2 && card.innerText === "❓") {
+                card.innerText = val;
+                card.classList.add("flipped");
+                flipped.push({ el: card, val: val });
+
+                if (flipped.length === 2) {
+                  if (flipped[0].val === "🖤" && flipped[1].val === "🖤") {
+                    solved += 2;
+                    flipped = [];
+                    if (solved === 2) setTimeout(gameWin, 500);
+                  } else {
+                    setTimeout(() => {
+                      flipped[0].el.innerText = "❓";
+                      flipped[0].el.classList.remove("flipped");
+                      flipped[1].el.innerText = "❓";
+                      flipped[1].el.classList.remove("flipped");
+                      flipped = [];
+                    }, 800);
+                  }
+                }
+              }
+            };
+            grid.appendChild(card);
+          });
+          box.appendChild(grid);
+        } else if (key === "intan") {
+          instruct.innerText = "Tekan CATCH pas kelinci di area hijau!";
+          box.style.flexDirection = "column";
+          let track = document.createElement("div");
+          track.className = "track";
+          let zone = document.createElement("div");
+          zone.className = "target-zone";
+          let runner = document.createElement("div");
+          runner.className = "runner";
+          runner.innerText = "🐰";
+          track.append(zone, runner);
+
+          let btn = document.createElement("button");
+          btn.className = "btn-3d";
+          btn.innerText = "CATCH!";
+          btn.style.width = "60%";
+          box.append(track, btn);
+
+          let pos = 0;
+          let dir = 1;
+          let speed = 3;
+          const move = () => {
+            pos += speed * dir;
+            if (pos > 85 || pos < 0) dir *= -1;
+            runner.style.left = pos + "%";
+            gameTimer = requestAnimationFrame(move);
+          };
+          move();
+
+          btn.onmousedown = btn.ontouchstart = (e) => {
+            e.preventDefault();
+            if (pos >= 35 && pos <= 55) {
+              cancelAnimationFrame(gameTimer);
+              runner.innerText = "🥕";
+              btn.innerText = "DAPAT!";
+              setTimeout(gameWin, 500);
+            } else {
+              btn.innerText = "Meleset!";
+              btn.style.background = "#ff4757";
+              setTimeout(() => {
+                btn.innerText = "CATCH!";
+                btn.style.background = "var(--theme-color)";
+              }, 500);
+            }
+          };
+        } else if (key === "nia") {
+          instruct.innerText = "Ketuk telur terus sampai pecah!";
+          let obj = document.createElement("div");
+          obj.style.cssText =
+            "font-size: 5rem; cursor:pointer; user-select:none; transition:transform 0.05s;";
+          obj.innerText = "🥚";
+          box.appendChild(obj);
+
+          obj.onmousedown = obj.ontouchstart = (e) => {
+            e.preventDefault();
+            score++;
+            let shake = score > 10 ? 10 : 3;
+            obj.style.transform = `translate(${Math.random() * shake - shake / 2}px, ${Math.random() * shake - shake / 2}px) scale(${1 + score / 100})`;
+
+            if (score === 15) obj.innerText = "🐣";
+            if (score >= 25) {
+              obj.style.transform = "scale(1.2)";
+              obj.innerText = "🦖";
+              setTimeout(gameWin, 500);
+            }
+          };
+        }
+      }
+
+      function gameWin() {
+        const friend = friendsData[currentFriend];
+        confetti({
+          particleCount: 200,
+          spread: 100,
+          origin: { y: 0.5 },
+          colors: [friend.color, "#ffffff"],
+        });
+
+        document.getElementById("gameSection").style.display = "none";
+        document.getElementById("modalName").style.display = "none";
+
+        const imgSurprise = document.getElementById("surpriseImg");
+        imgSurprise.src = friend.image;
+        imgSurprise.style.display = "block";
+      }
+    </script>
+  </body>
+</html>
