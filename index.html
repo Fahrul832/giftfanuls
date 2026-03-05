@@ -465,49 +465,49 @@
       const friendsData = {
         misya: {
           name: "Misya",
-          password: "123",
+          password: "4837",
           image: "1.jpg",
           color: "#ff9a9e",
           bg: "#fff0f3",
         },
         sekar: {
           name: "Sekar",
-          password: "123",
+          password: "8521",
           image: "2.jpg",
           color: "#74b9ff",
           bg: "#f1f8ff",
         },
         tata: {
           name: "Tata",
-          password: "123",
+          password: "9403",
           image: "3.jpg",
           color: "#fdcb6e",
           bg: "#fffdf0",
         },
         najwa: {
           name: "Najwa",
-          password: "123",
+          password: "6178",
           image: "4.jpg",
           color: "#00b894",
           bg: "#f0fdf8",
         },
         tyas: {
           name: "Tyas",
-          password: "123",
+          password: "7614",
           image: "5.jpg",
           color: "#2d3436",
           bg: "#f5f6fa",
         },
         intan: {
           name: "Intan",
-          password: "123",
+          password: "3946",
           image: "6.jpg",
           color: "#e84393",
           bg: "#fff0f5",
         },
         nia: {
           name: "Nia",
-          password: "123",
+          password: "2059",
           image: "7.jpg",
           color: "#a29bfe",
           bg: "#f8f0ff",
@@ -550,7 +550,6 @@
       const modal = document.getElementById("myModal");
       const passInput = document.getElementById("passwordInput");
 
-      // FUNGSI OPEN MODAL YANG SUDAH DIPERBAIKI
       function openModal(key) {
         currentFriend = key;
         const friend = friendsData[key];
@@ -558,7 +557,6 @@
         box.style.setProperty("--theme-color", friend.color);
         box.style.setProperty("--theme-bg", friend.bg);
 
-        // Munculkan kembali modalnya
         modal.style.display = "flex";
         setTimeout(() => {
           modal.classList.add("show");
@@ -572,12 +570,10 @@
         document.getElementById("errorMessage").style.display = "none";
       }
 
-      // FUNGSI CLOSE MODAL YANG SUDAH DIPERBAIKI
       function closeModal() {
         modal.classList.remove("show");
         clearInterval(gameInterval);
         clearTimeout(gameTimer);
-        // Sembunyikan tuntas setelah animasi selesai
         setTimeout(() => {
           modal.style.display = "none";
         }, 300);
